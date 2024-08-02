@@ -1,0 +1,113 @@
+my-app/
+├── index.html
+├── styles.css
+├── app.js
+├── manifest.json
+└── service-worker.js<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lebensmittel und Rezepte</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <h1>Lebensmittel und Rezepte</h1>
+  <form id="item-form">
+    <input type="text" id="item-name" placeholder="Lebensmittel" required>
+    <input type="date" id="expiry-date" required>
+    <button type="submit">Hinzufügen</button>
+  </form>
+  <ul id="items-list"></ul>
+  <h2>Rezepte Vorschläge</h2>
+  <ul id="recipes-list"></ul>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(registration => {
+          console.log('Service Worker registered with scope:', registration.scope);
+        }).catch(error => {
+          console.log('Service Worker registration failed:', error);
+        });
+    }
+  </script>
+</body>
+</html>body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+form {
+  margin-bottom: 20px;
+}
+ul {
+  list-style: none;
+  padding: 0;
+}
+li {
+  margin-bottom: 10px;
+}document.getElementById('item-form').addEventListener('submit', function(event) {
+  event.preventDefault();
+  const itemName = document.getElementById('item-name').value;
+  const expiryDate = document.getElementById('expiry-date').value;
+  addItem(itemName, expiryDate);
+  document.getElementById('item-name').value = '';
+  document.getElementById('expiry-date').value = '';
+});
+
+function addItem(name, expiry) {
+  const itemsList = document.getElementById('items-list');
+  const li = document.createElement('li');
+  li.textContent = `${name} - Ablaufdatum: ${expiry}`;
+  itemsList.appendChild(li);
+  suggestRecipes();
+}
+
+function suggestRecipes() {
+  const recipesList = document.getElementById('recipes-list');
+  recipesList.innerHTML = ''; // Clear previous suggestions
+  // Simple example logic for suggesting recipes
+  const li = document.createElement('li');
+  li.textContent = 'Beispielrezept mit fast abgelaufenen Lebensmitteln';
+  recipesList.appendChild(li);
+}{
+  "name": "Lebensmittel und Rezepte",
+  "short_name": "Rezepte",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open('my-cache').then(cache => {
+      return cache.addAll([
+        '/',
+        '/index.html',
+        '/styles.css',
+        '/app.js',
+        '/manifest.json'
+      ]);
+    })
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(response => {
+      return response || fetch(event.request);
+    })
+  );
+});
